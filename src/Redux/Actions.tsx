@@ -83,6 +83,18 @@ export const socialWechatLogin: any = createAsyncThunk(
   }
 );
 
+// Coupon code
+export const validateCoupon: any = createAsyncThunk(
+  "validateCoupon",
+  async (body: any) => {
+    return ApiPostNoAuth(api.validateCoupon, body)
+      .then((res: any) => {
+        return res?.data;
+      })
+      .catch((err) => err);
+  }
+);
+
 //User Profile
 export const user_profile: any = createAsyncThunk(
   "user_profile",

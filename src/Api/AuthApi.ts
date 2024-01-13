@@ -1,4 +1,5 @@
-export const BaseUrl = "https://dotpoint.api.webisheet.com/";
+// export const BaseUrl = "https://dotpoint.api.webisheet.com/";
+export const BaseUrl = "http://localhost:4000/";
 // export const BaseUrl = "http://192.168.29.248:4000/";
 
 // export const ApiUrlPersona = "persona/";
@@ -51,6 +52,7 @@ export const api = {
   change_email_verification: "/user/change_email_verification",
   change_email: "/user/change_email",
   social_login_change_email_verification: "/user/social_login/change_email_verification",
+  validateCoupon: "/user/coupon",
 };
 export const LOGIN_TOKEN = "access_token";
 export const REFRESH_LOGIN_TOKEN = "refresh_token";
