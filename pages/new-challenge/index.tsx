@@ -605,6 +605,7 @@ console.log((getSymbol(selectedTradingAccountCurrency?.code) + numberWithCommas(
                     paymentCurrencyList={paymentCurrencyList}
                     handlePaymentCurrency={handlePaymentCurrency}
                     selectedPaymentCurrency={selectedPaymentCurrency}
+                    setSelectedPaymentCurrency={setSelectedPaymentCurrency}
                     challenge={challenge}
                     selectedTradingPlatForm={selectedTradingPlatForm}
                     setIsPayment={setIsPayment}

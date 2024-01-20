@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Formik, Form, ErrorMessage, Field } from "formik";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
@@ -10,7 +10,7 @@ import OutlinedCheckbox from "@components/common/commonCheckBox";
 import SelectDropDown from "@components/common/selectDropDown";
 import RadioButtonBox from "@components/common/RadioButtonBox";
 import TextLabel from "@components/common/commonTextLabel";
-import { buy_challenge } from "@redux/Redux/Actions";
+import { buy_challenge, validateCoupon } from "@redux/Redux/Actions";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import CommonModal from "@components/common/commonModel";
@@ -27,6 +27,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import DocPreview from "@components/common/docPreview";
 import DocViewer, { DocViewerRenderers } from "@cyntler/react-doc-viewer";
+import { tostify } from "@components/common/tostify";
 
 const state = ["Surat", "Ahemdabad"];
 const useStyles = makeStyles()((theme) => {
@@ -58,15 +59,15 @@ const useStyles = makeStyles()((theme) => {
     phoneInput: {
       padding: "13px",
       height: "46px",
-      width: '91.5%',
+      width: "91.5%",
       borderRadius: "10px",
       border: "1px solid #EEEEEE",
-      outline: 'none',
+      outline: "none",
       marginLeft: 48,
       fontFamily: "Poppins",
       [theme.breakpoints.down("sm")]: {
-        width: "84%"
-      }
+        width: "84%",
+      },
     },
   };
 });
@@ -77,6 +78,7 @@ const PersonNewChallenge = ({
   paymentCurrencyList,
   handlePaymentCurrency,
   selectedPaymentCurrency,
+  setSelectedPaymentCurrency,
   selectedTradingPlatForm,
   challenge,
   data,
@@ -89,19 +91,26 @@ const PersonNewChallenge = ({
   handleBack,
   handleNext,
   activeStep,
-  setChallengeId
+  setChallengeId,
 }: any) => {
-
   //Hooks
   const { classes } = useStyles();
   const dispatch = useDispatch();
   const router = useRouter();
   const setFullPageLoader = usePageLoader();
-  const theme = useTheme()
+  const theme = useTheme();
 
-  console.log(data, "data")
   const data1 = {
-    createdAt: buyList?.map((item: any) => item?.tradingCurrency.map((e: any) => { if (e?._id === challenge?._id) { return item; } })).flat().filter((y: any) => y !== null && y !== undefined)?.[0]?.createdAt,
+    createdAt: buyList
+      ?.map((item: any) =>
+        item?.tradingCurrency.map((e: any) => {
+          if (e?._id === challenge?._id) {
+            return item;
+          }
+        })
+      )
+      .flat()
+      .filter((y: any) => y !== null && y !== undefined)?.[0]?.createdAt,
     tradingPeriodDays: buyList
       ?.map((item: any) =>
         item?.tradingCurrency.map((e: any) => {
@@ -111,14 +120,11 @@ const PersonNewChallenge = ({
         })
       )
       .flat()
-      .filter((y: any) => y !== null && y !== undefined)?.[0]
-      ?.tradingPeriodDays,
+      .filter((y: any) => y !== null && y !== undefined)?.[0]?.tradingPeriodDays,
   };
 
   const createdAtDate = new Date();
-  const targetDate = new Date(
-    createdAtDate.getTime() + data1.tradingPeriodDays * 24 * 60 * 60 * 1000
-  );
+  const targetDate = new Date(createdAtDate.getTime() + data1.tradingPeriodDays * 24 * 60 * 60 * 1000);
   const formattedTargetDate = targetDate;
 
   const handleSubmit = async (values: any) => {
@@ -151,13 +157,32 @@ const PersonNewChallenge = ({
         isReadTermsAndConditions: data?.isRememberMe,
         // amount: selectedPaymentCurrency?.amount,
         challengeType: value,
-        challengeListId: buyList?.map((item: any) => item?.tradingCurrency.map((e: any) => { if (e?._id === challenge?._id) { return item } })).flat().filter((y: any) => y !== null && y !== undefined)?.[0]?._id,
+        challengeListId: buyList
+          ?.map((item: any) =>
+            item?.tradingCurrency.map((e: any) => {
+              if (e?._id === challenge?._id) {
+                return item;
+              }
+            })
+          )
+          .flat()
+          .filter((y: any) => y !== null && y !== undefined)?.[0]?._id,
         billingInfo: billInfo,
         // maximumLoss: challenge?.maximumLoss,
-        platformOption: buyList?.map((item: any) => item?.tradingCurrency.map((e: any) => { if (e?._id === challenge?._id) { return item } })).flat().filter((y: any) => y !== null && y !== undefined)?.[0]?.platformOption?.[0] || 0,
+        platformOption:
+          buyList
+            ?.map((item: any) =>
+              item?.tradingCurrency.map((e: any) => {
+                if (e?._id === challenge?._id) {
+                  return item;
+                }
+              })
+            )
+            .flat()
+            .filter((y: any) => y !== null && y !== undefined)?.[0]?.platformOption?.[0] || 0,
         // profitTarget: challenge?.profitTarget,
         serverDetail: selectedTradingPlatForm?.toLowerCase(),
-        endChallengeDate: formattedTargetDate
+        endChallengeDate: formattedTargetDate,
       };
       // ['createdAt', 'createdBy', 'credentials', 'equity', 'gain', 'isActive', 'isActive', 'isBlock', 'profit', 'updatedAt', 'updatedBy', '_id'].forEach((e: any) => delete body[e]);
       try {
@@ -168,8 +193,8 @@ const PersonNewChallenge = ({
           setChallengeId(response.payload.data._id);
           setIsPaymentMethodModel(true);
           setFullPageLoader(false);
-          setIsPayment(true)
-          handleNext()
+          setIsPayment(true);
+          handleNext();
         } else {
           setFullPageLoader(false);
         }
@@ -182,9 +207,11 @@ const PersonNewChallenge = ({
     }
   };
 
+  const [couponResponse, setCouponResponse] = useState(null);
+
   return (
     <>
-      {data?._id &&
+      {data?._id && (
         <>
           <PaperContainer title={"Contact Info"}>
             <Grid container spacing={2} xs={12} sm={12} md={12} lg={12}>
@@ -199,7 +226,12 @@ const PersonNewChallenge = ({
                     onChange={(e: any) => setData({ ...data, VATnumber: e.target.value })}
                     width="100%"
                   />
-                  <TextLabel variant="caption" fontSize="12px" color="error" title={!data?.VATnumber ? error?.VATnumber : " "} />
+                  <TextLabel
+                    variant="caption"
+                    fontSize="12px"
+                    color="error"
+                    title={!data?.VATnumber ? error?.VATnumber : " "}
+                  />
                 </Grid>
               ) : null}
               <Grid item xs={12} sm={6} md={6} lg={6}>
@@ -213,11 +245,15 @@ const PersonNewChallenge = ({
                   width="100%"
                 />
                 <TextLabel variant="caption" fontSize="12px" color="error" title={!data?.email ? error?.email : " "} />
-                <TextLabel variant="caption" fontSize="12px" color="error" title={data?.email && data?.email?.match(Regex.emailRegex) ? "" : error.invalidEmail} />
-
+                <TextLabel
+                  variant="caption"
+                  fontSize="12px"
+                  color="error"
+                  title={data?.email && data?.email?.match(Regex.emailRegex) ? "" : error.invalidEmail}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={6} lg={6}>
-                <TextLabel fontSize="14px" title={'Contact Number'} marginBottom={5} />
+                <TextLabel fontSize="14px" title={"Contact Number"} marginBottom={5} />
                 <PhoneInput
                   country={"hk"}
                   value={data?.countryCode + data?.contactNumber}
@@ -228,13 +264,18 @@ const PersonNewChallenge = ({
                       countryCode: code,
                       contactNumber: data?.countryCode === code ? formattedValue?.replace(code, "") : undefined,
                       countryCode1: country?.countryCode,
-                      countryName: country?.name
+                      countryName: country?.name,
                     });
                   }}
-                  inputProps={{ required: true, className: classes.phoneInput, }}
+                  inputProps={{ required: true, className: classes.phoneInput }}
                   placeholder="Contact number"
                 />
-                <TextLabel variant="caption" fontSize="12px" color="error" title={!data?.contactNumber ? error?.contactNumber : " "} />
+                <TextLabel
+                  variant="caption"
+                  fontSize="12px"
+                  color="error"
+                  title={!data?.contactNumber ? error?.contactNumber : " "}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={6} lg={6}>
                 <CommonTextField
@@ -258,7 +299,12 @@ const PersonNewChallenge = ({
                     }
                   }}
                 />
-                <TextLabel variant="caption" fontSize="12px" color="error" title={!data?.postalCode ? error?.postalCode : " "} />
+                <TextLabel
+                  variant="caption"
+                  fontSize="12px"
+                  color="error"
+                  title={!data?.postalCode ? error?.postalCode : " "}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={6} lg={6}>
                 <CommonTextField
@@ -282,7 +328,12 @@ const PersonNewChallenge = ({
                   value={data?.street}
                   width="100%"
                 />
-                <TextLabel variant="caption" fontSize="12px" color="error" title={!data?.street ? error?.street : " "} />
+                <TextLabel
+                  variant="caption"
+                  fontSize="12px"
+                  color="error"
+                  title={!data?.street ? error?.street : " "}
+                />
               </Grid>
 
               <Grid item xs={12} sm={6} md={6} lg={6}>
@@ -315,7 +366,9 @@ const PersonNewChallenge = ({
                   placeholder="Enter note here."
                   name="note"
                   value={data?.note}
-                  onChange={(e: any) => { setData({ ...data, note: e.target.value }); }}
+                  onChange={(e: any) => {
+                    setData({ ...data, note: e.target.value });
+                  }}
                   width="100%"
                 />
               </Grid>
@@ -328,7 +381,6 @@ const PersonNewChallenge = ({
                 <Grid container spacing={2}>
                   {paymentCurrencyList?.length > 0 &&
                     paymentCurrencyList?.map((e: any, i: any) => {
-                      console.log(e, "eeeeeeeeeeeeeeee")
                       return (
                         <Grid item xs={6} sm={6} md={4} lg={3} xl={2} key={i}>
                           <RadioButtonBox
@@ -344,7 +396,7 @@ const PersonNewChallenge = ({
                             border={"1px solid #91D14F"}
                             backgroundColor={"#91D14F"}
                             borderRadius={"50px"}
-                            padding={'0px'}
+                            padding={"0px"}
                           />
                         </Grid>
                       );
@@ -357,7 +409,12 @@ const PersonNewChallenge = ({
           <Grid container spacing={2} mt={0.5}>
             <Grid item xs={12} lg={6}>
               <PaperContainer title={"Terms & Conditions"}>
-                <DocPreview link={"/assets/doc/Dot_Point_T&C_v2.pdf"} iconName={"pdf"} octateFile={false} isSideView={false} />
+                <DocPreview
+                  link={"/assets/doc/Dot_Point_T&C_v2.pdf"}
+                  iconName={"pdf"}
+                  octateFile={false}
+                  isSideView={false}
+                />
 
                 {/* <DocViewer documents={[
                     { uri: "assets/doc/Dot_Point_T&C_v2.pdf" },
@@ -380,14 +437,21 @@ const PersonNewChallenge = ({
                   style={{ height: 500 }}
                 /> */}
                 <Box sx={{ marginBottm: "20px" }}>
-                  <Box display={"flex"} alignItems={"center"} marginBottom={2} gap={1} justifyContent={"space-between"} flexWrap={"wrap"}>
+                  <Box
+                    display={"flex"}
+                    alignItems={"center"}
+                    marginBottom={2}
+                    gap={1}
+                    justifyContent={"space-between"}
+                    flexWrap={"wrap"}
+                  >
                     <OutlinedCheckbox
                       color={"#333333"}
                       label={"I declare that I have read and agree with "}
                       secondLabel={"Terms & Conditions"}
                       name={"isRememberMe"}
                       handleSelect={(e: any) => {
-                        setData({ ...data, isRememberMe: e?.target?.checked })
+                        setData({ ...data, isRememberMe: e?.target?.checked });
                       }}
                       onClickSecondLabel={() => downloadFileNewTab("/assets/doc/Dot_Point_T&C_v2.pdf")}
                       value={data?.isRememberMe}
@@ -401,16 +465,28 @@ const PersonNewChallenge = ({
             </Grid>
             <Grid item xs={12} lg={6}>
               <PaperContainer title={"Cancellation & Refund Policy"}>
-                <DocPreview link={"/assets/doc/Cancellation%20And%20Refund%20Policy.pdf"} iconName={"pdf"} octateFile={false} isSideView={false} />
+                <DocPreview
+                  link={"/assets/doc/Cancellation%20And%20Refund%20Policy.pdf"}
+                  iconName={"pdf"}
+                  octateFile={false}
+                  isSideView={false}
+                />
                 <Box>
-                  <Box display={"flex"} alignItems={"center"} marginBottom={2} gap={1} justifyContent={"space-between"} flexWrap={"wrap"}>
+                  <Box
+                    display={"flex"}
+                    alignItems={"center"}
+                    marginBottom={2}
+                    gap={1}
+                    justifyContent={"space-between"}
+                    flexWrap={"wrap"}
+                  >
                     <OutlinedCheckbox
                       color={"#333333"}
                       label={"I declare that I have read and agree with"}
                       secondLabel={"Cancellation & Refund Policy"}
                       name={"isCancellation"}
                       handleSelect={(e: any) => {
-                        setData({ ...data, isCancellation: e?.target?.checked })
+                        setData({ ...data, isCancellation: e?.target?.checked });
                       }}
                       onClickSecondLabel={() => downloadFileNewTab("/assets/doc/Cancellation And Refund Policy.pdf")}
                       value={data?.isCancellation}
@@ -418,13 +494,17 @@ const PersonNewChallenge = ({
                       selected={data?.isCancellation}
                     />
                     {/* <Assets src={"/assets/icons/download_icon.svg"} absolutePath={true} /> */}
-
                   </Box>
                 </Box>
               </PaperContainer>
             </Grid>
-            {activeStep == 1 &&
+            {activeStep == 1 && (
               <Grid item xs={12} lg={12}>
+                <CouponCodeComp
+                  setSelectedPaymentCurrency={setSelectedPaymentCurrency}
+                  setCouponResponse={setCouponResponse}
+                />
+                <br />
                 <PaperContainer>
                   <Grid container spacing={0} xs={12} sm={12} md={12} lg={12} xl={12}>
                     <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
@@ -440,7 +520,16 @@ const PersonNewChallenge = ({
                       />
                     </Grid>
                     <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
-                      <TextLabel title={`${selectedPaymentCurrency?.currencySymbol + numberWithCommas(selectedPaymentCurrency?.amount)}`} textAlign="center" color="#0099CB" fontWeight="600" fontSize="28px" />
+                      <TextLabel
+                        title={`${
+                          selectedPaymentCurrency?.currencySymbol +
+                          numberWithCommas(selectedPaymentCurrency?.discountedPrice || selectedPaymentCurrency?.amount)
+                        }`}
+                        textAlign="center"
+                        color="#0099CB"
+                        fontWeight="600"
+                        fontSize="28px"
+                      />
                     </Grid>
                     <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
                       <MUIButton
@@ -454,12 +543,77 @@ const PersonNewChallenge = ({
                     </Grid>
                   </Grid>
                 </PaperContainer>
-              </Grid>}
+              </Grid>
+            )}
           </Grid>
-
         </>
-      }
+      )}
     </>
+  );
+};
+
+const CouponCodeComp = (props: any) => {
+  const { setSelectedPaymentCurrency } = props;
+
+  const dispatch = useDispatch();
+  const theme = useTheme();
+
+  const [coupon, setCoupon] = useState("");
+
+  const validateCouponCode = async () => {
+    try {
+      const res = await dispatch(validateCoupon({ couponCode: coupon }));
+      const error = ErrorHandler(res);
+      if (error) {
+        tostify(res?.payload?.message, "success");
+        const discount = res?.payload?.data?.discount;
+
+        setSelectedPaymentCurrency((prev: any) => ({
+          ...prev,
+          discountedPrice: discount == 100 ? '0' : prev?.amount - (discount / 100) * prev?.amount,
+        }));
+      }
+
+      setCoupon("");
+    } catch (error) {
+      console.log(error);
+      toast.error("unable to apply coupon at the moment");
+    }
+  };
+
+  return (
+    <PaperContainer>
+      <Grid container alignItems="end">
+        <Grid item xs={8} md={8} lg={8} sm={8}>
+          <CommonTextField
+            text="Coupon Code"
+            placeholder="Please enter coupon code."
+            size="medium"
+            type="text"
+            name="postalCode"
+            value={coupon}
+            width="100%"
+            onChange={(e: any) => {
+              setCoupon(e.target.value);
+            }}
+          />
+        </Grid>
+        <Grid item xs={1} md={1} lg={1} sm={1} />
+        <Grid item xs={3} md={3} lg={3} sm={3}>
+          <MUIButton
+            disabled={!coupon}
+            backgroundColor={theme.palette.action}
+            hoverBgColor={theme.palette.action}
+            fullWidth={false}
+            height="48px"
+            text="Redeem"
+            width="100%"
+            borderRadius="50px"
+            onClick={validateCouponCode}
+          />
+        </Grid>
+      </Grid>
+    </PaperContainer>
   );
 };
 
